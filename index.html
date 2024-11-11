@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Records System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        header {
+            background-color: #2d3e50;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        nav ul li {
+            display: inline;
+            margin-right: 15px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+
+        section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background-color: #2d3e50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #1a2530;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        textarea {
+            width: 80%;
+            height: 200px;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+
+        form {
+            text-align: left;
+        }
+
+        .intro {
+            margin-top: 50px;
+        }
+
+        input[type="file"] {
+            margin-top: 10px;
+        }
+
+        .report-item {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .report-item button {
+            margin-top: 10px;
+            background-color: #28a745;
+        }
+
+        .revoke-button {
+            background-color: #dc3545;
+        }
+
+        .delete-button {
+            background-color: #ffc107;
+        }
+
+        .report-item .doctor-list {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Medical Records System</h1>
+            <nav>
+                <ul>
+                    <li><a href="#patient">Patient Dashboard</a></li>
+                    <li><a href="#doctor">Doctor Dashboard</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- Landing Section -->
+        <section class="intro">
+            <h2>Welcome to the Medical Records System</h2>
+            <p>Choose your role to continue:</p>
+            <div class="buttons">
+                <a href="#" class="btn" onclick="showPatientDashboard()">Patient Login</a>
+                <a href="#" class="btn" onclick="showDoctorDashboard()">Doctor Login</a>
+            </div>
+        </section>
+
+        <!-- Patient Dashboard -->
+        <section id="patient-dashboard" class="hidden">
+            <h2>Patient Dashboard</h2>
+            <button class="btn" onclick="toggleAddReportForm()">Add New Report</button>
+            <button class="btn" onclick="viewPatientReports()">View My Reports</button>
+
+            <div id="add-report-form" class="hidden">
+                <h3>Add New Report</h3>
+                <input type="text" id="reportName" placeholder="Report Name" required><br><br>
+                <input type="date" id="reportDate" required><br><br>
+                <input type="file" id="reportFile" required><br><br>
+                <button class="btn" onclick="submitReport()">Submit Report</button>
+            </div>
+
+            <div id="reports-list" class="hidden">
+                <h3>Your Reports</h3>
+                <div id="reportsDisplay"></div>
+            </div>
+        </section>
+
+        <!-- Doctor Dashboard -->
+        <section id="doctor-dashboard" class="hidden">
+            <h2>Doctor Dashboard</h2>
+            <button class="btn" onclick="viewDoctorReports()">View Patient Reports</button>
+            <div id="doctor-reports-list" class="hidden">
+                <h3>Patient Reports</h3>
+                <div id="doctorReportsDisplay"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Function to show Patient Dashboard
+        function showPatientDashboard() {
+            document.getElementById('patient-dashboard').classList.remove('hidden');
+            document.getElementById('doctor-dashboard').classList.add('hidden');
+        }
+
+        // Function to show Doctor Dashboard
+        function showDoctorDashboard() {
+            document.getElementById('doctor-dashboard').classList.remove('hidden');
+            document.getElementById('patient-dashboard').classList.add('hidden');
+        }
+
+        // Toggle Add Report Form for Patients
+        function toggleAddReportForm() {
+            document.getElementById('add-report-form').classList.toggle('hidden');
+        }
+
+        // Submit the Report by Patient
+        function submitReport() {
+            const reportName = document.getElementById('reportName').value;
+            const reportDate = document.getElementById('reportDate').value;
+            const reportFile = document.getElementById('reportFile').files[0];
+
+            if (!reportName || !reportDate || !reportFile) {
+                alert('Please fill all the fields.');
+                return;
+            }
+
+            const reportId = Math.random().toString(36).substr(2, 9); // Generate unique report ID
+            const reportData = {
+                reportId,
+                name: reportName,
+                date: reportDate,
+                file: URL.createObjectURL(reportFile),
+                doctorsWithAccess: [] // List of doctors who have access
+            };
+
+            const reportsList = JSON.parse(localStorage.getItem('reports')) || [];
+            reportsList.push(reportData);
+            localStorage.setItem('reports', JSON.stringify(reportsList));
+
+            alert('Report added successfully');
+            document.getElementById('reportName').value = '';
+            document.getElementById('reportDate').value = '';
+            document.getElementById('reportFile').value = '';
+            document.getElementById('add-report-form').classList.add('hidden');
+        }
+
+        // View Patient Reports
+        function viewPatientReports() {
+            const reportsList = JSON.parse(localStorage.getItem('reports')) || [];
+            const reportsDisplay = document.getElementById('reportsDisplay');
+            reportsDisplay.innerHTML = '';
+
+            reportsList.forEach(report => {
+                const reportElement = document.createElement('div');
+                reportElement.classList.add('report-item');
+                reportElement.innerHTML = `
+                    <h4>${report.name} (${report.date})</h4>
+                    <a href="${report.file}" target="_blank">View Report</a><br>
+                    <button class="btn" onclick="grantAccess('${report.reportId}')">Grant Access to Doctor</button>
+                    <button class="btn revoke-button" onclick="revokeAccess('${report.reportId}')">Revoke Access</button>
+                    <button class="btn delete-button" onclick="deleteReport('${report.reportId}')">Delete Report</button>
+                    <div class="doctor-list">
+                        <strong>Doctors with access:</strong>
+                        <ul id="doctor-list-${report.reportId}"></ul>
+                    </div>
+                `;
+                reportsDisplay.appendChild(reportElement);
+
+                // Display doctors with access
+                const doctorList = document.getElementById(`doctor-list-${report.reportId}`);
+                report.doctorsWithAccess.forEach(doctor => {
+                    const li = document.createElement('li');
+                    li.textContent = doctor;
+                    doctorList.appendChild(li);
+                });
+            });
+
+            document.getElementById('reports-list').classList.remove('hidden');
+        }
+
+        // Grant Access to Doctor
+        function grantAccess(reportId) {
+            const doctorName = prompt("Enter doctor's name to grant access:");
+            if (!doctorName) {
+                alert('Doctor name is required.');
+                return;
+            }
+
+            const reportsList = JSON.parse(localStorage.getItem('reports')) || [];
+            const report = reportsList.find(r => r.reportId === reportId);
+            if (report && !report.doctorsWithAccess.includes(doctorName)) {
+                report.doctorsWithAccess.push(doctorName);
+                localStorage.setItem('reports', JSON.stringify(reportsList));
+                alert('Access granted to doctor.');
+                viewPatientReports(); // Refresh the report list
+            }
+        }
+
+        // Revoke Access from Doctor
+        function revokeAccess(reportId) {
+            const doctorName = prompt("Enter doctor's name to revoke access:");
+            if (!doctorName) {
+                alert('Doctor name is required.');
+                return;
+            }
+
+            const reportsList = JSON.parse(localStorage.getItem('reports')) || [];
+            const report = reportsList.find(r => r.reportId === reportId);
+            if (report) {
+                const index = report.doctorsWithAccess.indexOf(doctorName);
+                if (index !== -1) {
+                    report.doctorsWithAccess.splice(index, 1);
+                    localStorage.setItem('reports', JSON.stringify(reportsList));
+                    alert('Access revoked from doctor.');
+                    viewPatientReports(); // Refresh the report list
+                } else {
+                    alert('Doctor does not have access to this report.');
+                }
+            }
+        }
+
+        // Delete Report from Patient's list
+        function deleteReport(reportId) {
+            const reportsList = JSON.parse(localStorage.getItem('reports')) || [];
+            const updatedReportsList = reportsList.filter(report => report.reportId !== reportId);
+            localStorage.setItem('reports', JSON.stringify(updatedReportsList));
+            alert('Report deleted successfully.');
+            viewPatientReports(); // Refresh the report list
+        }
+
+        // View Doctor Reports (simulated to show all reports for demo)
+        function viewDoctorReports() {
+            const reportsList = JSON.parse(localStorage.getItem('reports')) || [];
+            const reportsDisplay = document.getElementById('doctorReportsDisplay');
+            reportsDisplay.innerHTML = '';
+
+            reportsList.forEach(report => {
+                const reportElement = document.createElement('div');
+                reportElement.classList.add('report-item');
+                reportElement.innerHTML = `
+                    <h4>${report.name} (${report.date})</h4>
+                    <a href="${report.file}" target="_blank">View Report</a><br>
+                    <strong>Doctors with access:</strong>
+                    <ul>
+                        <li>${report.doctorsWithAccess.join(', ')}</li>
+                    </ul>
+                `;
+                reportsDisplay.appendChild(reportElement);
+            });
+
+            document.getElementById('doctor-reports-list').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
+
+This paste expires in <1 hour. Public IP access. Share whatever you see with others in seconds with Context.Terms of ServiceReport this
